@@ -1,55 +1,56 @@
-function [gammaIndicesStart, gammaIndicesEnd, gammaTimesStart, gammaTimesEnd, X, params] = find_gamma_bouts_start_end_times_new(lowpass, highpass, boutDuration, varargin)
+function [gammaIndicesStart, gammaIndicesEnd, gammaTimesStart, gammaTimesEnd, X] = find_gamma_bouts_start_end_times_new(lowpass, highpass, boutDuration, cfg_in)
 % Inputs:
 %   lowpass:        lowpass filter value (45 for g50, 70 for g80)
 %   highpass:       highpass filter value (65 for g50, 90 for g80)
 %   boutDuration:   how long you want the gamma bouts to be (in milliseconds). This parameter is chosen to make them all the same length, but in reality, gamma bouts
 %                       will vary in duration.
-
 % Outputs:
 %   amplitude_peaks = timestamps of gamma amplitude peaks
 %
 fd = FindFiles('*keys.m');
 startSess = 1; endSess = length(fd);
-MarkerSize = 20;
-SaveIt = 1;
-doPlot = 0;
-decimatefactor = 2;
-detrend = 1;
-diffdata = 0;
-doRestrict = 1;
-FiltOrder = 256;
-process_varargin(varargin);
+
+cfg_def.MarkerSize = 20;
+cfg_def.SaveIt = 1;
+cfg_def.doPlot = 0;
+cfg_def.decimateFactor = 2;
+cfg_def.doRestrict = 1;
+cfg_def.FiltOrder = 256;
+% process_varargin(varargin);
+[cfg_out] = ProcessConfig(cfg_def,cfg_in);
 
 for iSess = startSess:endSess;
     pushdir(fileparts(fd{iSess}));
     SSN = GetSSN('SingleSession'); disp(SSN);
     disp('pre-processing the LFPs')
-    [ofc, vstr, ~, dt, ~, decimatefactor, detrend, diffdata] = prepCSCs('decimatefactor', decimatefactor, 'detrend', detrend, 'diffdata', diffdata, 'doRestrict', doRestrict);
-    fs = 1/vstr.dt;
-    params.fs = 1/dt;
-    params.FiltOrder = FiltOrder;
-    params.decimatefactor = decimatefactor;
-    params.detrend = detrend;
-    params.diffdata = diffdata;
-    params.dt = dt; % dt = timestep
-    params.doRestrict = doRestrict;
-    params.lowpass = lowpass;
-    params.highpass = highpass;
-    params.boutDuration = boutDuration;
+    [ofc, vstr, hipp, csc_cfg] = prepCSCs_new([]);
     
-    disp('calculating power')
-    % [IF, IA, IP, CSC0, IE]=InstSig(vstr,45,65,256);
-    [~, ~, ~, CSC0, IE]=InstSig(vstr,lowpass,highpass,FiltOrder);
-    percentile = .95;
-    IEsort = sort(IE.data);
-    percentile_index = percentile*length(IEsort);
-    Amplitudecutoff = IEsort(round(percentile_index));
-    TimeStepsToChopOFF = 4*round(boutDuration*fs);
-    numBoutSamples = round(boutDuration*fs/2);  % number of samples on either side of the peak of a gamma event
-    if mod(numBoutSamples,2) == 1;
-        numBoutSamples = numBoutSamples-1;
-    end
+    %%  OLD
+%     disp('calculating power')
+%     % [IF, IA, IP, CSC0, IE]=InstSig(vstr,45,65,256);
+%     [~, ~, ~, CSC0, IE] = InstSig(vstr,lowpass,highpass,FiltOrder);
+%     percentile = .95;
+%     IEsort = sort(IE.data);
+%     percentile_index = percentile*length(IEsort);
+%     Amplitudecutoff = IEsort(round(percentile_index));
+%     TimeStepsToChopOFF = 4*round(boutDuration*fs);
+%     numBoutSamples = round(boutDuration*fs/2);  % number of samples on either side of the peak of a gamma event
+%     if mod(numBoutSamples,2) == 1;
+%         numBoutSamples = numBoutSamples-1;
+%     end
+    %% NEW
+    % filter in low gamma band
+    cfg = [];
+    cfg.f = [lowpass highpass];
+    cfg.display_filter = 0;   
+    vstr = FilterLFP(cfg,vstr);
     
+    
+    
+    
+    
+    
+    %%
     disp('finding threshold crossings')
     % Get timestamps for the first instance of each threshold crossing for the gamma amplitude envelope
     [amplitdue_index,~] = find(IE.data>=Amplitudecutoff);
@@ -84,7 +85,7 @@ for iSess = startSess:endSess;
     disp(strcat('number of observations = ', num2str(nobs)))
     firstTimeStamps = amplitude_peaks_index - numBoutSamples;
     firstGammaToUse = find(firstTimeStamps>0, 1, 'first');
-    for iL = firstGammaToUse:length(amplitude_peaks_index);   % skip event 1 in case the gamma event 'starts' before the first timestamp. 
+    for iL = firstGammaToUse:length(amplitude_peaks_index);   % skip event 1 in case the gamma event 'starts' before the first timestamp.
         %     disp(iL);
         x = ofc.D(amplitude_peaks_index(iL)-(numBoutSamples): amplitude_peaks_index(iL)+(numBoutSamples));
         x = x(1:nobs);
@@ -120,7 +121,7 @@ for iSess = startSess:endSess;
         disp('data saved');
     end
     
-%     clear gammaIndicesStart; clear gammaIndicesEnd; clear gammaTimesStart; clear gammaTimesEnd; clear params; clear amplitude_peaks_index; clear amplitude_peaks_times;
+    %     clear gammaIndicesStart; clear gammaIndicesEnd; clear gammaTimesStart; clear gammaTimesEnd; clear params; clear amplitude_peaks_index; clear amplitude_peaks_times;
     popdir;
 end
 
