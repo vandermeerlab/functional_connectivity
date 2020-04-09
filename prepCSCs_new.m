@@ -1,4 +1,4 @@
-function [ofc, vstr, hipp, csc_csc] = prepCSCs_new(cfg_in)
+function [ofc, vstr, hipp, cfg_master] = prepCSCs_new(cfg_in)
 
 %2014-09-10. JJS. Loads and prepares the ofc and vstr CSC files that are
 %specified as 'good' in the keys file for analysis of granger causality for
@@ -12,31 +12,31 @@ cfg_def.diffdata = 0;  % for removing autocorrelation in the time series
 cfg_def.doRestrict = 1; % Restirct CSC to track time only. 
 cfg_def.hippflag = 0;  % Do we want to Load a hippocampal CSC? (for sessions with electrode in fissure). 0 = no. 1 = yes.
 % process_varargin(varargin);
-[csc_csc] = ProcessConfig(cfg_def,cfg_in);
+cfg_master = ProcessConfig(cfg_def,cfg_in);
 
 tic
 LoadExpKeys;
 
 %% Load the CSCs
 cfg_ofc.fc = {ExpKeys.OFCcsc};
-cfg_ofc.VoltageConvFactor = cfg_def.VoltageConvFactor;
-cfg_ofc.decimateByFactor = csc_csc.decimateFactor;
-[ofc] = LoadCSC(cfg_ofc);
+cfg_ofc.VoltageConvFactor = cfg_master.VoltageConvFactor;
+cfg_ofc.decimateByFactor = cfg_master.decimateFactor;
+ofc = LoadCSC(cfg_ofc);
 ofc_dt = median(diff(ofc.tvec));
 
 cfg_vstr.fc = {ExpKeys.VSTRcsc};
-cfg_vstr.VoltageConvFactor = cfg_def.VoltageConvFactor;
-cfg_vstr.decimateByFactor = csc_csc.decimateFactor;
-[vstr] = LoadCSC(cfg_vstr);
+cfg_vstr.VoltageConvFactor = cfg_master.VoltageConvFactor;
+cfg_vstr.decimateByFactor = cfg_master.decimateFactor;
+vstr = LoadCSC(cfg_vstr);
 vstr_dt = median(diff(vstr.tvec));
 
 assert(length(ofc.data)==length(vstr.data));
 assert(ofc_dt == vstr_dt);
 
-if strcmp('NaN', ExpKeys.HIPPcsc) == 0 && csc_csc.hippflag == 1;
+if strcmp('NaN', ExpKeys.HIPPcsc) == 0 && cfg_master.hippflag == 1;
     cfg_hipp.fc = ExpKeys.HIPPcsc;
-    cfg_hipp.VoltageConvFactor = cfg_def.VoltageConvFactor;
-    cfg_hipp.decimateByFactor = csc_csc.decimateFactor;
+    cfg_hipp.VoltageConvFactor = cfg_master.VoltageConvFactor;
+    cfg_hipp.decimateByFactor = cfg_master.decimateFactor;
     [hipp] = LoadCSC(cfg_hipp);
     hipp_dt = median(diff(hipp.tvec));
 end
@@ -52,12 +52,12 @@ if cfg_def.doRestrict == 1 && cfg_def.hippflag == 1;
 end
 
 %% remove dc shifts in voltage
-if csc_csc.detrend == 1;
-    ofcdata=locdetrend(ofc.data, 1/ofc_dt, [1 0.5]);
-    vstrdata=locdetrend(vstr.data, 1/vstr_dt, [1 0.5]);
+if cfg_master.detrend == 1;
+    ofcdata = locdetrend(ofc.data, 1/ofc_dt, [1 0.5]);
+    vstrdata = locdetrend(vstr.data, 1/vstr_dt, [1 0.5]);
     ofc = tsd(ofc.tvec, ofcdata);
     vstr = tsd(vstr.tvec, vstrdata);
-    if csc_csc.hippflag == 1;
+    if cfg_master.hippflag == 1;
         hippdata = locdetrend(hipp.data, 1/hipp_dt, [1 0.5]);
         hipp = tsd(hipp.tvec, hippdata);
     else
@@ -66,7 +66,7 @@ if csc_csc.detrend == 1;
 end
 
 %% First Order Differencing
-if csc_csc.diffdata == 1;  
+if cfg_master.diffdata == 1;  
     ofc = tsd(ofc.tvec(1:end-1), diff(ofc.data));
     vstr = tsd(vstr.tvec(1:end-1), diff(vstr.data));
 end
@@ -78,8 +78,8 @@ end
 if sum(isnan(vstr.data))>0;
     warning('1 or more NaNs in VSTR data');
 end
-if csc_csc.hippflag == 1;
-    if sum(isnan(hipp.data))>0;
+if cfg_master.hippflag == 1;
+    if sum(isnan(hipp.data)) > 0;
         warning('1 or more NaNs in HIPP data');
     end
 end
