@@ -6,8 +6,8 @@ function [ofc, vstr, hipp, cfg_master] = prepCSCs_new(cfg_in)
 %2020-04-06. JJS. Modifications to work w/ MvdMlab codeset.
 cfg_def = [];
 % cfg_def.VoltageConvFactor = 10^6;
-cfg_def.decimateFactor = 2; % Downsampling the data. Default here is 2 (from 2kHz to 1kHz).
-cfg_def.detrend = 0;   % for removing slow DC shifts in voltage
+cfg_def.decimateByFactor = []; % Downsampling the data. Default here is 2 (from 2kHz to 1kHz).
+cfg_def.detrend = 1;   % for removing slow DC shifts in voltage
 cfg_def.diffdata = 0;  % for removing autocorrelation in the time series
 cfg_def.doRestrict = 1; % Restirct CSC to track time only.
 cfg_def.hippflag = 0;  % Do we want to Load a hippocampal CSC? (for sessions with electrode in fissure). 0 = no. 1 = yes.
@@ -47,18 +47,26 @@ end
 if cfg_master.detrend == 1;
     ofcdata = locdetrend(ofc.data, 1/ofc_dt, [1 0.5]);
     vstrdata = locdetrend(vstr.data, 1/vstr_dt, [1 0.5]);
-    ofc = tsd(ofc.tvec, ofcdata'); % transpose after ofcdata because vdm lab tsd's are in the format [tvec = n x 1; data = 1 x n]
-    vstr = tsd(vstr.tvec, vstrdata');
+    ofc.data = ofcdata'; % transpose after ofcdata because vdm lab tsd's are in the format [tvec = n x 1; data = 1 x n]
+    vstr.data = vstrdata'; 
     if cfg_master.hippflag == 1;
         hippdata = locdetrend(hipp.data, 1/hipp_dt, [1 0.5]);
-        hipp = tsd(hipp.tvec, hippdata');
+        hipp.data = hippdata'; 
     end
 end
 
 %% First Order Differencing
 if cfg_master.diffdata == 1;
-    ofc = tsd(ofc.tvec(1:end-1), diff(ofc.data));
-    vstr = tsd(vstr.tvec(1:end-1), diff(vstr.data));
+    ofc.tvec = ofc.tvec(1:end-1);
+    ofc.data = diff(ofc.data);
+    
+    vstr.tvec = vstr.tvec(1:end-1);
+    vstr.data = diff(vstr.data);
+    
+    if cfg_master.hippflag == 1;
+        hipp.tvec = hipp.tvec(1:end-1);
+        hipp.data = diff(hipp.data);
+    end
 end
 
 %% Checks
