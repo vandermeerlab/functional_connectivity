@@ -2,7 +2,7 @@ function [gammaIndicesStart, gammaIndicesEnd, gammaTimesStart, gammaTimesEnd, X]
 % Inputs:
 %   lowpass:        lowpass filter value (45 for g50, 70 for g80)
 %   highpass:       highpass filter value (65 for g50, 90 for g80)
-%   boutDuration:   how long you want the gamma bouts to be (in milliseconds). This parameter is chosen to make them all the same length, but in reality, gamma bouts
+%   boutDuration:   how long you want the gamma bouts to be (in s). This parameter is chosen to make them all the same length, but in reality, gamma bouts
 %                       will vary in duration.
 % Outputs:
 %   amplitude_peaks = timestamps of gamma amplitude peaks
@@ -30,9 +30,9 @@ for iSess = startSess:endSess;
     %% NEW
     % filter in low gamma band
     cfg = [];
-    cfg.f = [lowpass highpass];
+    cfg.f = [master_cfg.lowpass master_cfg.highpass];
     cfg.display_filter = 0;   
-    vstr = FilterLFP(cfg,vstr);
+    fvstr = FilterLFP(cfg,vstr);
     
         %%  OLD
 %     disp('calculating power')

@@ -56,7 +56,7 @@ if cfg_master.detrend == 1;
 end
 
 %% First Order Differencing
-if cfg_master.diffdata == 1;
+if cfg_master.diffdata == 1;   % removes much of the autocorrelation (but not all), if this is desired (for Granger analysis)
     ofc.tvec = ofc.tvec(1:end-1);
     ofc.data = diff(ofc.data);
     
