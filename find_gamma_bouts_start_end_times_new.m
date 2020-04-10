@@ -1,4 +1,4 @@
-function [gammaIndicesStart, gammaIndicesEnd, gammaTimesStart, gammaTimesEnd, X] = find_gamma_bouts_start_end_times_new(lowpass, highpass, boutDuration, cfg_in)
+function [gammaIndicesStart, gammaIndicesEnd, gammaTimesStart, gammaTimesEnd, X] = find_gamma_bouts_start_end_times_new(cfg_in)
 % Inputs:
 %   lowpass:        lowpass filter value (45 for g50, 70 for g80)
 %   highpass:       highpass filter value (65 for g50, 90 for g80)
@@ -16,16 +16,25 @@ cfg_def.doPlot = 0;
 cfg_def.decimateFactor = 2;
 cfg_def.doRestrict = 1;
 cfg_def.FiltOrder = 256;
-% process_varargin(varargin);
-[cfg_out] = ProcessConfig(cfg_def,cfg_in);
+cfg_def.lowpass = 45;
+cfg_def.highpass = 65;
+cfg_def.boutDuration = 0.1;
+master_cfg = ProcessConfig(cfg_def,cfg_in);
 
 for iSess = startSess:endSess;
     pushdir(fileparts(fd{iSess}));
     SSN = GetSSN('SingleSession'); disp(SSN);
-    disp('pre-processing the LFPs')
-    [ofc, vstr, hipp, csc_cfg] = prepCSCs_new([]);
     
-    %%  OLD
+    [ofc, vstr, ~, ~] = prepCSCs_new(master_cfg);   % can change this later to return hippocampus LFP also 
+    
+    %% NEW
+    % filter in low gamma band
+    cfg = [];
+    cfg.f = [lowpass highpass];
+    cfg.display_filter = 0;   
+    vstr = FilterLFP(cfg,vstr);
+    
+        %%  OLD
 %     disp('calculating power')
 %     % [IF, IA, IP, CSC0, IE]=InstSig(vstr,45,65,256);
 %     [~, ~, ~, CSC0, IE] = InstSig(vstr,lowpass,highpass,FiltOrder);
@@ -37,19 +46,7 @@ for iSess = startSess:endSess;
 %     numBoutSamples = round(boutDuration*fs/2);  % number of samples on either side of the peak of a gamma event
 %     if mod(numBoutSamples,2) == 1;
 %         numBoutSamples = numBoutSamples-1;
-%     end
-    %% NEW
-    % filter in low gamma band
-    cfg = [];
-    cfg.f = [lowpass highpass];
-    cfg.display_filter = 0;   
-    vstr = FilterLFP(cfg,vstr);
-    
-    
-    
-    
-    
-    
+%     end  
     %%
     disp('finding threshold crossings')
     % Get timestamps for the first instance of each threshold crossing for the gamma amplitude envelope
