@@ -1,9 +1,9 @@
-function [gammaIndicesStart, gammaIndicesEnd, gammaTimesStart, gammaTimesEnd, X] = find_gamma_bouts_start_end_times_new(cfg_in)
+function [iv_gammaTimes, X] = find_gamma_bouts_start_end_times_new(cfg_in)
 % 2020-04-14. JJS. This function gets the start and end times of threshold crossing events for the filtered gamma LFP. 
 
 % Inputs:
-%   lowpass:            lowpass filter value (45 for g50, 70 for g80)
-%   highpass:           highpass filter value (65 for g50, 90 for g80)
+%   lowpass:            lowpass filter value (45 for g50, 70 for gamma50)
+%   highpass:           highpass filter value (65 for g50, 90 for gamma80)
 %   boutDuration:       how long you want the gamma bouts to be (in s). This parameter is chosen to make them all the same length, but in reality, gamma bouts
 %                           will vary in duration.
 % Outputs:
@@ -15,6 +15,8 @@ function [gammaIndicesStart, gammaIndicesEnd, gammaTimesStart, gammaTimesEnd, X]
                             % Channel 1 = OFC. Channel 2 = vstr     % can add Hipp later as Channel 3
                             % nSamples = number of data points in a gamma event (proportional to boutDuration)
                             % nGammaEvents = number of gamma events in the session 
+                           
+% Currently, function gets data (vStr and OFC) triggered from vStr gamma events only.                            
 
 fd = FindFiles('*keys.m');
 startSess = 1; endSess = length(fd);
@@ -83,6 +85,11 @@ for iSess = startSess:endSess;
     gammaIndicesStart = amplitude_peaks_index - numBoutSamples; gammaIndicesEnd = amplitude_peaks_index + numBoutSamples;
     gammaTimesStart = amplitude_peaks_times - numBoutSamples; gammaTimesEnd = amplitude_peaks_times + numBoutSamples;
     
+    %% Build IV 
+    iv_gammaTimes = iv(gammaTimesStart, gammaTimesEnd); 
+  
+    
+    
     %% Pull out the data
     disp('putting the data into array')
     tic
@@ -112,14 +119,14 @@ for iSess = startSess:endSess;
         hold on
         LoadExpKeys;
         plot(f_vstr.tvec, f_vstr.data);   % plot the filtered vStr LFP.
-        plot(IE.tvec, IE.data, 'r')      % plot the amplitude envolope 
+        plot(IE.tvec, IE.data, 'r')       % plot the amplitude envolope 
         line([ExpKeys.TimeOnTrack ExpKeys.TimeOffTrack], [Amplitudecutoff Amplitudecutoff], 'linestyle', '--', 'Color', 'k', 'LineWidth', 1);
         plot(vstr.tvec(amplitude_peaks_index), ones(1,length(amplitude_peaks_index)), 'k.', 'MarkerSize', cfg_out.MarkerSize)
         plot(amplitude_peaks_times, repmat(Amplitudecutoff,1,length(amplitude_peaks_times)), 'g.', 'MarkerSize', cfg_out.MarkerSize)
         xlabel('Time (sec)', 'FontSize', 16)
         ylabel('Voltage (microvolts)', 'FontSize', 16)
         set(gca, 'FontSize', 16)
-        
+        title(ExpKeys.VSTRcsc);
     end
     %% save it
     if cfg_out.SaveIt == 1;
