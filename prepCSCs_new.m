@@ -1,4 +1,4 @@
-function [ofc, vstr, hipp, cfg_csc] = prepCSCs_new(cfg_in)
+function [ofc, vstr, hipp, fs, cfg_csc] = prepCSCs_new(cfg_in)
 
 %2014-09-10. JJS. Loads and prepares the ofc and vstr CSC files that are
 %specified as 'good' in the keys file for analysis of granger causality for
@@ -23,6 +23,8 @@ ofc_dt = median(diff(ofc.tvec));
 cfg_csc.fc = {ExpKeys.VSTRcsc};
 vstr = LoadCSC(cfg_csc);
 vstr_dt = median(diff(vstr.tvec));
+
+fs = 1/median(diff(ofc.tvec)); 
 
 if strcmp('NaN', ExpKeys.HIPPcsc) == 0 && cfg_csc.hippflag == 1;
     cfg_csc.fc = ExpKeys.HIPPcsc;

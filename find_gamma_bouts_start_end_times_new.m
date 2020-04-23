@@ -37,7 +37,7 @@ cfg_out = ProcessConfig(cfg_def, cfg_in);
 
 % for iSess = startSess:endSess;
 for iSess = 1:length(fd);
-
+%     pushdir(fileparts(fd{iSess}));
     pushdir(fd{iSess});
     SSN = GetSSN('SingleSession'); disp(SSN);
     
@@ -93,32 +93,34 @@ for iSess = 1:length(fd);
     event_TimesStart = amplitude_peaks_times - cfg_out.eventDuration/2; event_TimesEnd = amplitude_peaks_times + cfg_out.eventDuration/2;    % start and end timestamps either side of the peak value
     
     %% Build IV 
-    eventStats = iv(event_TimesStart, event_TimesEnd);         % timestmaps for event start and end times
-    eventStats.usr.istart = event_IndicesStart;                % tvec indices for start times 
-    eventStats.usr.iend = event_IndicesEnd;                    % tvec indices for end times 
-    eventStats.cfg.history.mfun = cat(1, eventStats.cfg.history.mfun, 'find_LFP_events.m'); % track what function worked on this data most recently
-    eventStats.cfg.history.cfg = cat(1, eventStats.cfg.history.cfg, {cfg_out}); %  I don't think this is correct     
-    
+    eventStats{iSess} = iv(event_TimesStart, event_TimesEnd);         % timestmaps for event start and end times
+    eventStats{iSess}.usr.istart = event_IndicesStart;                % tvec indices for start times 
+    eventStats{iSess}.usr.iend = event_IndicesEnd;                    % tvec indices for end times 
+    eventStats{iSess}.cfg.history.mfun = cat(1, eventStats{iSess}.cfg.history.mfun, 'find_LFP_events.m'); % track what function worked on this data most recently
+    eventStats{iSess}.cfg.history.cfg = cfg_out; %  I don't think this is correct     
+%     eventStats.cfg.history.cfg = cat(1, eventStats.cfg.history.cfg, {cfg_out}); %  I don't really understand this line     
+    eventStats{iSess}.usr.fs = fs; % make a note of the sampling rate
+
     %% Arrange the LFP events into a data matrix
     disp('putting the data into array')
     tic
     nvars = 2; % change is to 3 if decide to use HIPP later
     nobs      = numEventSamples;   % number of observations per 'trial' (i.e. per gamma event)
-    eventData = nan(nvars, nobs, length(amplitude_peaks_index));  % Channels x Datapoints in an event x Number of events 
+    eventData{iSess} = nan(nvars, nobs, length(amplitude_peaks_index));  % Channels x Datapoints in an event x Number of events 
     disp(strcat('number of observations = ', num2str(nobs)))
     firstTimeStamps = amplitude_peaks_index - numEventSamples/2;
     firstGammaToUse = find(firstTimeStamps>0, 1, 'first');
     for iL = firstGammaToUse:length(amplitude_peaks_index);   % skip event 1 in case the gamma event 'starts' before the first timestamp.
         %     disp(iL);
-        x = CSC_ofc.data(amplitude_peaks_index(iL)-(numEventSamples/2): amplitude_peaks_index(iL)+(numEventSamples/2));
+        x = CSC_ofc.data(amplitude_peaks_index(iL)-(numEventSamples/2): amplitude_peaks_index(iL)+(numEventSamples/2));   % OFC
         x = x(1:nobs);
-        y = CSC_vstr.data(amplitude_peaks_index(iL)-(numEventSamples/2): amplitude_peaks_index(iL)+(numEventSamples/2));
+        y = CSC_vstr.data(amplitude_peaks_index(iL)-(numEventSamples/2): amplitude_peaks_index(iL)+(numEventSamples/2));  % vStr 
         y = y(1:nobs);
         assert(size(x,2)==nobs);
         assert(size(y,2)==nobs);
         
-        eventData(1,:,iL) = x;
-        eventData(2,:,iL) = y;
+        eventData{iSess}(1,:,iL) = x;
+        eventData{iSess}(2,:,iL) = y;
     end
     toc
     
@@ -133,28 +135,23 @@ for iSess = 1:length(fd);
         plot(CSC_vstr.tvec(amplitude_peaks_index), ones(1, length(amplitude_peaks_index)), 'k.', 'MarkerSize', cfg_out.MarkerSize)  
         plot(amplitude_peaks_times, repmat(Amplitudecutoff, 1, length(amplitude_peaks_times)), 'c.', 'MarkerSize', cfg_out.MarkerSize)  % plot the event peaks  
         c = axis;
-        line([eventStats.tstart eventStats.tstart], [c(3) c(4)], 'color', 'g', 'LineWidth', 1);  % plot the event start times
-        line([eventStats.tend eventStats.tend], [c(3) c(4)], 'color', 'r',  'LineWidth', 1);  % plot the event end times
+        line([eventStats{iSess}.tstart eventStats{iSess}.tstart], [c(3) c(4)], 'color', 'g', 'LineWidth', 1);  % plot the event start times
+        line([eventStats{iSess}.tend eventStats{iSess}.tend], [c(3) c(4)], 'color', 'r',  'LineWidth', 1);  % plot the event end times
         xlabel('Time (sec)', 'FontSize', 16)
         ylabel('Voltage (microvolts)', 'FontSize', 16)
         set(gca, 'FontSize', 16)
         title(ExpKeys.VSTRcsc);
+        pause;
     end
     %% save it
     if cfg_out.SaveIt == 1;
         SSN = GetSSN('SingleSession');
         fn = strcat(SSN, '-LFPevents-', eventName);
-        save(fn, 'eventStats', 'eventData');
+        eventStatsToSave = eventStats{iSess}; 
+        eventDataToSave = eventData{iSess};
+        save(fn, 'eventStatsToSave', 'eventDataToSave');
         disp(fn);
         disp('data saved');
     end    
     popdir;
 end
-
-%% Criteria from mvdm lab papers
-% must have 4 cycles
-% must have 3 cycles > 50 microvolts amplitude
-% variance score (variance/mean of cycle peaks and troughs)>1.5
-% merge events that are separated by 50ms or less (same gamma type)
-% Eric used a window of either 100ms or 3 cycles
-% Julien used a window of 400ms
