@@ -1,4 +1,4 @@
-function [eventStats, eventData] = find_gamma_bouts_start_end_times_new_single_session(cfg_in, eventName)
+function [eventStats, eventData] = find_gamma_bouts_start_end_times_new_single_session(cfg_in, CSC_ofc, CSC_vstr, eventName, varargin)
 % 2020-04-14. JJS. This function gets the start and end times of threshold crossing events for the filtered gamma LFP.
 % Operates on a single session and a single frequency band. 
 
@@ -24,27 +24,21 @@ function [eventStats, eventData] = find_gamma_bouts_start_end_times_new_single_s
 % fd = FindFiles('*keys.m');
 % startSess = 1; endSess = length(fd);
 
+doPlot = 0;
+MarkerSize= 20;
+SaveIt = 0;
+process_varargin(varargin);
+
 cfg_def = [];
-cfg_def.doPlot = 1;
-cfg_def.MarkerSize = 20;
-cfg_def.SaveIt = 0;
-cfg_def.lowpass = 45;
-cfg_def.highpass = 65;
+cfg_def.lowpass = 70;
+cfg_def.highpass = 90;
 cfg_def.eventDuration = 0.1;    % Duration (in seconds) of the gamma events. This is somewhat arbitrary. Julien used 0.4 s, Eric used 0.1 s
 cfg_def.percentile = 0.95;
 cfg_def.minIEI = .1;            % Duration (in seconds) that events need to be separated by.  IEI = inter-event-interval
 cfg_out = ProcessConfig(cfg_def, cfg_in);
 
-
 SSN = GetSSN('SingleSession'); disp(SSN);
 
-cfg_prep = [];
-cfg_prep.decimateByFactor = 2; % Downsampling the data. Default here is 2 (from 2kHz to 1kHz).
-cfg_prep.detrend = 1;   % for removing slow DC shifts in voltage
-cfg_prep.diffdata = 0;  % for removing autocorrelation in the time series
-cfg_prep.doRestrict = 1; % Restirct CSC to track time only.
-cfg_prep.hippflag = 0;  % Do we want to Load a hippocampal CSC? (for sessions with electrode in fissure). 0 = no. 1 = yes.
-[CSC_ofc, CSC_vstr, ~, ~] = prepCSCs_new(cfg_prep);   % can change this later to return hippocampus LFP also
 fs = 1/median(diff(CSC_vstr.tvec));  % sampling rate of the LFP
 
 %% Filter in the frequency band of interest
@@ -122,15 +116,15 @@ end
 toc
 
 %% plot it
-if cfg_out.doPlot == 1;
+if doPlot == 1;
     clf
     hold on
     LoadExpKeys;
     plot(f_vstr.tvec, f_vstr.data);   % plot the filtered vStr LFP.
     plot(IE.tvec, IE.data, 'm')       % plot the amplitude envolope
     line([ExpKeys.TimeOnTrack ExpKeys.TimeOffTrack], [Amplitudecutoff Amplitudecutoff], 'linestyle', '--', 'Color', 'k', 'LineWidth', 1); % plot the threshold
-    plot(CSC_vstr.tvec(amplitude_peaks_index), ones(1, length(amplitude_peaks_index)), 'k.', 'MarkerSize', cfg_out.MarkerSize)
-    plot(amplitude_peaks_times, repmat(Amplitudecutoff, 1, length(amplitude_peaks_times)), 'c.', 'MarkerSize', cfg_out.MarkerSize)  % plot the event peaks
+    plot(CSC_vstr.tvec(amplitude_peaks_index), ones(1, length(amplitude_peaks_index)), 'k.', 'MarkerSize', MarkerSize)
+    plot(amplitude_peaks_times, repmat(Amplitudecutoff, 1, length(amplitude_peaks_times)), 'c.', 'MarkerSize', MarkerSize)  % plot the event peaks
     c = axis;
     line([eventStats.tstart eventStats.tstart], [c(3) c(4)], 'color', 'g', 'LineWidth', 1);  % plot the event start times
     line([eventStats.tend eventStats.tend], [c(3) c(4)], 'color', 'r',  'LineWidth', 1);  % plot the event end times
@@ -141,7 +135,7 @@ if cfg_out.doPlot == 1;
 %     pause;
 end
 %% save it
-if cfg_out.SaveIt == 1;
+if SaveIt == 1;
     SSN = GetSSN('SingleSession');
     fn = strcat(SSN, '-LFPevents-', eventName);
     save(fn, 'eventStatsToSave', 'eventDataToSave');

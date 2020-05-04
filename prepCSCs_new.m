@@ -6,10 +6,10 @@ function [ofc, vstr, hipp, fs, cfg_csc] = prepCSCs_new(cfg_in)
 %2020-04-06. JJS. Modifications to work w/ MvdMlab codeset.
 cfg_def = [];
 cfg_def.VoltageConvFactor = 10^6;
-cfg_def.decimateByFactor = 2; % Downsampling the data. Default here is 2 (from 2kHz to 1kHz).
+cfg_def.decimateByFactor = 1; % Downsampling the data. Default here is 2 (from 2kHz to 1kHz).
 cfg_def.detrend = 1;   % for removing slow DC shifts in voltage
 cfg_def.diffdata = 0;  % for removing autocorrelation in the time series
-cfg_def.doRestrict = 1; % Restirct CSC to track time only.
+cfg_def.doRestrict = 0; % Restirct CSC to track time only.
 cfg_def.hippflag = 0;  % Do we want to Load a hippocampal CSC? (for sessions with electrode in fissure). 0 = no. 1 = yes.
 cfg_csc = ProcessConfig(cfg_def,cfg_in);
 
