@@ -1,4 +1,4 @@
-function [X, cfg_out] = amp_crosscorr_on_gamma_events_new(cfg_in, CSC1, CSC2, eventStats, eventData, eventName, varargin)
+function [X, cfg_out] = Xcorr_on_LFP_events(cfg_in, CSC1, CSC2, eventStats, eventData, eventName, varargin)
 % original code from Adhikari,Sigurdsson,Topiwala,& Gordon, 2010. J.NsciMethods
 % 2014-09-24. JJS. Modified so that it can run through multiple sessions
 % and save the data and figures to each session folder.
@@ -22,7 +22,6 @@ function [X, cfg_out] = amp_crosscorr_on_gamma_events_new(cfg_in, CSC1, CSC2, ev
 %   cfg_out:
 
 doPlotKeeps = 1;
-doPlotEverything = 0;
 Inspect = 1;
 doSave = 1;
 process_varargin(varargin);
@@ -34,8 +33,8 @@ dt = 1/samp_freq;
 cfg_def.percentile = 0.95;
 cfg_def.nShuffle = 1000;
 cfg_def.maxlags = round(eventDuration/dt);              % number of lags to calculate on either side of zero. Duration of maxlags = 1/2 LFP eventDuration.
-cfg_def.low_freq = 45;
-cfg_def.high_freq = 65;
+cfg_def.low_freq = 20;
+cfg_def.high_freq = 30;
 cfg_out = ProcessConfig(cfg_def, cfg_in);
 
 %% Checks 
@@ -127,44 +126,4 @@ if doPlotKeeps == 1;
             clf
         end
     end
-end
-
-if doPlotEverything == 0;
-%     clf
-%     % crosscorr plot fof this gamma event
-%     subplot(2,2,1)
-%     plot(lags, crosscorr,'color',[0 0 1],'linewidth',2),hold on %plots crosscorrelations
-%     plot(lags(g),crosscorr(g),'rp','markerfacecolor',[1 0 0],'markersize',10)%plots marker at the peak of the cross correlation
-%     plot([0 0],[1.05*max(crosscorr) 0.95*min(crosscorr)],'color',[0 0 0],'linestyle',':', 'linewidth',2) %plots dashed line at zero lag
-%     set(gca,'xtick',[-100 -50 0 50 100])
-%     axis tight, box off, xlim([-101 100])
-%     xlabel('Lag (ms)','fontsize',14)
-%     ylabel('Crosscorrelation','fontsize',14)
-%     title(strcat('max crosscorr = ', num2str(max_crosscorr_value_real)))
-%     % crosscorr values for vstr time series vs. 1,000 phase permuted ofc time series
-%     subplot(2,2,2)
-%     hist(max_crosscorr_value_shuff, 50);
-%     c = axis;
-%     line([max_crosscorr_value_real max_crosscorr_value_real], [c(3) c(4)], 'Color', 'r', 'LineWidth', 1);
-%     title(strcat('keep = ', num2str(keep(iEvent))))
-%     xlabel('max crosscorr value', 'fontsize', 14)
-%     ylabel('count', 'fontsize', 14)
-%     % raw LFP traces for OFC and VSTR
-%     subplot(2,2,3)
-%     CSC1.data = X(1,:,iEvent);
-%     CSC2.data = X(2,:,iEvent);
-%     hold on
-%     plot(CSC1.data, 'r')  % ofc
-%     plot(CSC2.data, 'b')  % vstr
-%     legend('ofc', 'vstr')
-%     % g50 amplitude envelopes for OFC and VSTR
-%     subplot(2,2,4)
-%     Gofc = tsd(lags(1:end-1)', CSC1.data');
-%     Gvstr = tsd(lags(1:end-1)', CSC2.data');
-%     [~, ~, ~, ~, IEofc]=InstSig(Gofc,45,65,64);
-%     [~, ~, ~, ~, IEvstr]=InstSig(Gvstr,45,65,256);
-%     plot(Gofc.range, IEofc.data, 'r')  % ofc
-%     plot(Gvstr.range, IEvstr.data, 'b')  % vstr
-%     
-%     pause
 end

@@ -1,8 +1,21 @@
-cfg_prep = [];
-cfg_prep.decimateByFactor = 2; % Downsampling the data. Default here is 2 (from 2kHz to 1kHz).
-cfg_prep.detrend = 1;   % for removing slow DC shifts in voltage
-cfg_prep.diffdata = 0;  % for removing autocorrelation in the time series
-cfg_prep.doRestrict = 1; % Restirct CSC to track time only.
-cfg_prep.hippflag = 0;  % Do we want to Load a hippocampal CSC? (for sessions with electrode in fissure). 0 = no. 1 = yes.
-[CSC_ofc, CSC_vstr, ~, ~] = prepCSCs_new(cfg_prep);   % can change this later to return hippocampus LFP also
-fs = 1/median(diff(CSC_vstr.tvec));  % sampling rate of the LFP
+amplXcorr_script
+
+[CSC_ofc, CSC_vstr, ~, ~, cfg_csc] = prepCSCs_new([]);
+
+[eventStats, eventData] = find_LFP_events([], CSC_ofc, CSC_vstr, 'lowgamma');
+
+[X, cfg_amp] = Xcorr_on_LFP_events([], CSC_ofc, CSC_vstr, eventStats, eventData, 'highgamma', 'doPlotKeeps', 0);
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
+
+[X] = assign_LFP_events('lowgamma');  % usr field                      % single session
+
+Xcorr_subplot_single_session(X);
+	calls on [CROSSCORRordered] = sort_crosscorr_single_session(X, keeplist);
+
+
+
+
+
+data and figures can be found in:
+C:\Jeff\__Granger_Paper

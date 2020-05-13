@@ -13,8 +13,8 @@ for iSess = startSess:endSess;
     
     [CSC_ofc, CSC_vstr, ~, ~, cfg_csc] = prepCSCs_new([]);
     
-    [eventStats, eventData] = find_gamma_bouts_start_end_times_new_single_session([], CSC_ofc, CSC_vstr, 'highgamma');
+    [eventStats, eventData] = find_LFP_events([], CSC_ofc, CSC_vstr, 'beta');
     
-    [X, cfg_amp] = amp_crosscorr_on_gamma_events_new([], CSC_ofc, CSC_vstr, eventStats, eventData, 'highgamma', 'doPlotKeeps', 0);
+    [X, cfg_amp] = Xcorr_on_LFP_events([], CSC_ofc, CSC_vstr, eventStats, eventData, 'beta', 'doPlotKeeps', 0);
     
 end
