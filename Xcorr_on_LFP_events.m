@@ -21,7 +21,7 @@ function [X, cfg_out] = Xcorr_on_LFP_events(cfg_in, CSC1, CSC2, eventStats, even
 %   g:                              index of the max crosscorrelation lag
 %   cfg_out:
 
-doPlotKeeps = 1;
+doPlot = 1;
 Inspect = 1;
 doSave = 1;
 process_varargin(varargin);
@@ -67,7 +67,7 @@ amp2 = abs(filt_hilb2); % calculates the instantaneous amplitude of CSC2.data fi
 amp2 = amp2 - mean(amp2);
 assert(length(eventStats.usr.istart) == length(eventStats.usr.iend))
 
-iEvent = 0;
+
 tic   % takes about 5 minutes for 1000 LFP events (April 2020)
 for iEvent = 1:length(eventStats.usr.istart);
     disp(strcat(num2str(iEvent), ' of_', num2str(length(eventStats.usr.istart))))    
@@ -78,7 +78,7 @@ for iEvent = 1:length(eventStats.usr.istart);
     [C(iEvent), g(iEvent)] = max(crosscorr(:,iEvent));
     max_crosscorr_lag(iEvent) = lags(g(iEvent)); % identifies the lag at which the crosscorrelation peaks
     
-    parfor iShuf = 1: cfg_out.nShuffle
+    parfor iShuf = 1: cfg_out.nShuffle         % compare the max crosscorr value for the two events to a distribution of values for otherwise identical time series with shuffled phases
         amp2_shuff = AUX_shuffle_phases_new(amp2touse');
         temp_corrvalues = xcorr(amp1touse, amp2_shuff, cfg_out.maxlags, 'coeff');
         shuff_max_xcorr(iShuf) = max(temp_corrvalues);
@@ -109,7 +109,7 @@ if doSave == 1;
     disp('data saved');
 end
 
-if doPlotKeeps == 1;
+if doPlot == 1;
     figure(1); clf
     for iEvent = 1:length(eventStats.usr.istart);
         plot(X.lags, X.crosscorr(:,iEvent),'color',[0 0 1],'linewidth',2),hold on % plots crosscorrelations
@@ -119,7 +119,6 @@ if doPlotKeeps == 1;
         axis tight, box off, xlim([-101 100])
         xlabel('Lag (ms)','fontsize',14)
         ylabel('Crosscorrelation','fontsize',14)
-        %             disp('press any key to continue')
         title(num2str(iEvent))
         if Inspect
             pause

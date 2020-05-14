@@ -7,8 +7,8 @@ function [X] = assign_LFP_events(eventName, varargin)
 %
 % Outputs:
 %
+
 X = [];
-% skipSess = NaN;
 doPlot = 1;
 doSave = 1;
 MarkerSize = 15;
@@ -113,18 +113,6 @@ if exist(fn, 'file') == 2;           % Load LFP events. If file is not present, 
     X.Waiting_LFPevents = Waiting_LFPevents';
     if plotPosition; mazeWaiting_idx = TSD_getidx(pos_tsd, X.eventStats.tstart(Waiting_LFPevents), X.eventStats.tend(Waiting_LFPevents)); end
     
-    % %% Find gamma events that occur start maze segment
-    % SoM_LFPevents = NaN;
-    % for iLap = 1:length(sd.D);
-    %     idx = find(tstart > sd.EnteringSoMTime(iLap) & tstart < sd.ExitingSoMTime(iLap) & X.keep' == 1);
-    %     SoM_LFPevents = vertcat(SoM_LFPevents, idx);  % these are indices for LFP events in X.eventStats that fall within the reward window. These are in terms of event order, NOT cheetah timestamps.
-    % end
-    % SoM_LFPevents = SoM_LFPevents(~isnan(SoM_LFPevents));
-    % X.SoM_LFPevents = SoM_LFPevents;
-    % % X.SoM_LFPindices = X.eventStats.usr.istart(SoM_LFPevents);
-    % % X.SoM_LFPtimes = X.eventStats.tstart(SoM_LFPevents);
-    % if plotPosition; mazeSoM_idx = TSD_getidx(pos_tsd, X.eventStats.tstart(SoM_LFPevents), X.eventStats.tend(SoM_LFPevents)); end
-    
     disp(strcat('fract covered events =', num2str((sum(X.Reward_LFPevents) + sum(X.VTE_LFPevents) + ...
         sum(X.nonVTE_LFPevents) + sum(X.Approach_LFPevents) + sum(X.Waiting_LFPevents) ...
         + sum(X.PreRun_LFPevents) + sum(X.PostRun_LFPevents))/sum(X.keep))));
@@ -163,7 +151,6 @@ if exist(fn, 'file') == 2;           % Load LFP events. If file is not present, 
        
 else
     disp('LFP events not found. Skipping session')
-%     [~, skipSess, ~] = fileparts(pwd);
 end
 
 

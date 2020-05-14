@@ -1,4 +1,4 @@
-function [eventStats, eventData] = find_LFP_events(cfg_in, CSC_ofc, CSC_vstr, eventName, varargin)
+function [eventStats, eventData] = find_LFP_events(cfg_in, CSC1, CSC2, varargin)
 % 2020-04-14. JJS. This function gets the start and end times of threshold crossing events for the filtered gamma LFP.
 % Operates on a single session and a single frequency band. 
 
@@ -26,10 +26,11 @@ function [eventStats, eventData] = find_LFP_events(cfg_in, CSC_ofc, CSC_vstr, ev
 
 doPlot = 0;
 MarkerSize= 20;
-SaveIt = 0;
+% SaveIt = 0;
 process_varargin(varargin);
 
 cfg_def = [];
+cfg_def.eventName = beta;
 cfg_def.lowpass = 20;
 cfg_def.highpass = 30;
 cfg_def.eventDuration = 0.1;    % Duration (in seconds) of the gamma events. This is somewhat arbitrary. Julien used 0.4 s, Eric used 0.1 s
@@ -39,13 +40,13 @@ cfg_out = ProcessConfig(cfg_def, cfg_in);
 
 SSN = GetSSN('SingleSession'); disp(SSN);
 
-fs = 1/median(diff(CSC_vstr.tvec));  % sampling rate of the LFP
+fs = 1/median(diff(CSC2.tvec));  % sampling rate of the LFP
 
 %% Filter in the frequency band of interest
 cfg_filter = [];
 cfg_filter.f = [cfg_out.lowpass cfg_out.highpass];   % frequency band to filter in. So far, just using low gamma events [45 65]
 cfg_filter.display_filter = 0;
-f_vstr = FilterLFP(cfg_filter, CSC_vstr);
+f_vstr = FilterLFP(cfg_filter, CSC2);
 
 %% Calculate LFP power
 cfg_power = [];
@@ -103,9 +104,9 @@ firstTimeStamps = amplitude_peaks_index - numEventSamples/2;
 firstGammaToUse = find(firstTimeStamps>0, 1, 'first');
 for iL = firstGammaToUse:length(amplitude_peaks_index);   % skip event 1 in case the gamma event 'starts' before the first timestamp.
     %     disp(iL);
-    x = CSC_ofc.data(amplitude_peaks_index(iL)-(numEventSamples/2): amplitude_peaks_index(iL)+(numEventSamples/2));   % OFC
+    x = CSC1.data(amplitude_peaks_index(iL)-(numEventSamples/2): amplitude_peaks_index(iL)+(numEventSamples/2));   % OFC
     x = x(1:nobs);
-    y = CSC_vstr.data(amplitude_peaks_index(iL)-(numEventSamples/2): amplitude_peaks_index(iL)+(numEventSamples/2));  % vStr
+    y = CSC2.data(amplitude_peaks_index(iL)-(numEventSamples/2): amplitude_peaks_index(iL)+(numEventSamples/2));  % vStr
     y = y(1:nobs);
     assert(size(x,2)==nobs);
     assert(size(y,2)==nobs);
@@ -123,7 +124,7 @@ if doPlot == 1;
     plot(f_vstr.tvec, f_vstr.data);   % plot the filtered vStr LFP.
     plot(IE.tvec, IE.data, 'm')       % plot the amplitude envolope
     line([ExpKeys.TimeOnTrack ExpKeys.TimeOffTrack], [Amplitudecutoff Amplitudecutoff], 'linestyle', '--', 'Color', 'k', 'LineWidth', 1); % plot the threshold
-    plot(CSC_vstr.tvec(amplitude_peaks_index), ones(1, length(amplitude_peaks_index)), 'k.', 'MarkerSize', MarkerSize)
+    plot(CSC2.tvec(amplitude_peaks_index), ones(1, length(amplitude_peaks_index)), 'k.', 'MarkerSize', MarkerSize)
     plot(amplitude_peaks_times, repmat(Amplitudecutoff, 1, length(amplitude_peaks_times)), 'c.', 'MarkerSize', MarkerSize)  % plot the event peaks
     c = axis;
     line([eventStats.tstart eventStats.tstart], [c(3) c(4)], 'color', 'g', 'LineWidth', 1);  % plot the event start times
@@ -135,11 +136,11 @@ if doPlot == 1;
 %     pause;
 end
 %% save it
-if SaveIt == 1;
-    SSN = GetSSN('SingleSession');
-    fn = strcat(SSN, '-LFPevents-', eventName);
-    save(fn, 'eventStatsToSave', 'eventDataToSave');
-    disp(fn);
-    disp('data saved');
-end
+% if SaveIt == 1;
+%     SSN = GetSSN('SingleSession');
+%     fn = strcat(SSN, '-LFPevents-', eventName);
+%     save(fn, 'eventStatsToSave', 'eventDataToSave');
+%     disp(fn);
+%     disp('data saved');
+% end
 
