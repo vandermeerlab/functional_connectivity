@@ -30,7 +30,7 @@ MarkerSize= 20;
 process_varargin(varargin);
 
 cfg_def = [];
-cfg_def.eventName = beta;
+cfg_def.eventName = 'beta';
 cfg_def.lowpass = 20;
 cfg_def.highpass = 30;
 cfg_def.eventDuration = 0.1;    % Duration (in seconds) of the gamma events. This is somewhat arbitrary. Julien used 0.4 s, Eric used 0.1 s

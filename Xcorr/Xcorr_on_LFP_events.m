@@ -21,7 +21,7 @@ function [X, cfg_out] = Xcorr_on_LFP_events(cfg_in, CSC1, CSC2, eventStats, even
 %   g:                              index of the max crosscorrelation lag
 %   cfg_out:
 
-doPlot = 1;
+doPlot = 0;
 Inspect = 1;
 doSave = 1;
 process_varargin(varargin);
@@ -38,17 +38,17 @@ cfg_def.high_freq = 30;
 cfg_out = ProcessConfig(cfg_def, cfg_in);
 
 %% Checks 
-if length(CSC1.data)~= length(CSC2.data);
-    error('ERROR in amp_crosscorr. CSC1.data and CSC2.data must be vectors of the same size;')
-end
-s = size(CSC1.data);
-if min(s) ~= 1
-    error('ERROR in amp_crosscorr. CSC1.data and CSC2.data must be one-dimensional vectors')
-end
-s = size(CSC2.data);
-if min(s) ~= 1
-    error('ERROR in amp_crosscorr. CSC1.data and CSC2.data must be one-dimensional vectors')
-end
+% if length(CSC1.data)~= length(CSC2.data);
+%     error('ERROR in amp_crosscorr. CSC1.data and CSC2.data must be vectors of the same size;')
+% end
+% s = size(CSC1.data);
+% if min(s) ~= 1
+%     error('ERROR in amp_crosscorr. CSC1.data and CSC2.data must be one-dimensional vectors')
+% end
+% s = size(CSC2.data);
+% if min(s) ~= 1
+%     error('ERROR in amp_crosscorr. CSC1.data and CSC2.data must be one-dimensional vectors')
+% end
 
 %% Calculate the amplitdue envelope
 order = round(samp_freq); % determines the order of the filter used

@@ -13,7 +13,7 @@ for iSess = startSess:endSess;
     
     [CSC_ofc, CSC_vstr, ~, ~, cfg_csc] = prepCSCs_new([]);
     
-    [eventStats, eventData] = find_LFP_events([], CSC_ofc, CSC_vstr, 'beta');
+    [eventStats, eventData] = find_LFP_events([], CSC_ofc, CSC_vstr);
     
     [X, cfg_amp] = Xcorr_on_LFP_events([], CSC_ofc, CSC_vstr, eventStats, eventData, 'beta', 'doPlotKeeps', 0);
     
